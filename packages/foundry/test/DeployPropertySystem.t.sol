@@ -4,8 +4,8 @@ pragma solidity ^0.8.22;
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {DeployPropertySystem} from "../script/DeployPropertySystem.s.sol";
-import {PropertyToken} from "../src/PropertyToken.sol";
-import {PropertyMethodsV1} from "../src/PropertyMethodsV1.sol";
+import {PropertyToken} from "../contracts/PropertyToken.sol";
+import {PropertyMethodsV1} from "../contracts/PropertyMethodsV1.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 contract DeployPropertySystemTest is Test {
