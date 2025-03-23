@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import { ERC1155 } from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title PropertyToken
@@ -21,7 +21,7 @@ contract PropertyToken is ERC1155 {
     string public constant TOKEN_SYMBOL = "PROP";
     string public constant TOKEN_NAME = "Property Token";
 
-    constructor(string memory uri_) ERC1155(uri_) {}
+    constructor(string memory uri_) ERC1155(uri_) { }
 
     /**
      * @notice Get the URI for a token's metadata
