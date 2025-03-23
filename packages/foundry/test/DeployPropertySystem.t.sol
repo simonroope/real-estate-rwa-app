@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import { Test } from "forge-std/Test.sol";
-import { console } from "forge-std/console.sol";
-import { DeployPropertySystem } from "../script/DeployPropertySystem.s.sol";
-import { PropertyToken } from "../contracts/PropertyToken.sol";
-import { PropertyMethodsV1 } from "../contracts/PropertyMethodsV1.sol";
-import { PropertyMethodsV2 } from "../contracts/PropertyMethodsV2.sol";
-import { TransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import { ERC1967Utils } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
-import { ProxyAdmin } from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import { ITransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import { PropertyProxy } from "../contracts/PropertyProxy.sol";
+import {Test} from "forge-std/Test.sol";
+import {console} from "forge-std/console.sol";
+import {DeployPropertySystem} from "../script/DeployPropertySystem.s.sol";
+import {PropertyToken} from "../contracts/PropertyToken.sol";
+import {PropertyMethodsV1} from "../contracts/PropertyMethodsV1.sol";
+import {PropertyMethodsV2} from "../contracts/PropertyMethodsV2.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
+import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {PropertyProxy} from "../contracts/PropertyProxy.sol";
 
 contract DeployPropertySystemTest is Test {
     DeployPropertySystem deployer;
@@ -34,14 +34,22 @@ contract DeployPropertySystemTest is Test {
 
     function testDeployPropertySystem() public view {
         // Verify proxy address is not zero
-        assertTrue(proxyAddress != address(0), "Proxy address should not be zero");
+        assertTrue(
+            proxyAddress != address(0),
+            "Proxy address should not be zero"
+        );
 
         // Verify initialization
-        assertTrue(address(proxy.propertyToken()) != address(0), "PropertyToken should be set");
+        assertTrue(
+            address(proxy.propertyToken()) != address(0),
+            "PropertyToken should be set"
+        );
 
         // Verify PropertyToken base URI
         assertEq(
-            propertyToken.uri(0), "https://api.example.com/token/0", "PropertyToken base URI should be set correctly"
+            propertyToken.uri(0),
+            "https://api.example.com/token/0",
+            "PropertyToken base URI should be set correctly"
         );
 
         // Log deployment summary
@@ -70,12 +78,22 @@ contract DeployPropertySystemTest is Test {
         proxy.createProperty(propertyId, totalShares);
 
         // Verify property creation
-        assertEq(propertyToken.balanceOf(alice, propertyId), totalShares, "Owner should have all shares");
+        assertEq(
+            propertyToken.balanceOf(alice, propertyId),
+            totalShares,
+            "Owner should have all shares"
+        );
 
         // Transfer some shares to Bob
         uint256 transferAmount = 400;
         vm.prank(alice);
-        propertyToken.safeTransferFrom(alice, bob, propertyId, transferAmount, "");
+        propertyToken.safeTransferFrom(
+            alice,
+            bob,
+            propertyId,
+            transferAmount,
+            ""
+        );
 
         // Verify balances after transfer
         assertEq(
@@ -83,7 +101,11 @@ contract DeployPropertySystemTest is Test {
             totalShares - transferAmount,
             "Alice should have remaining shares"
         );
-        assertEq(propertyToken.balanceOf(bob, propertyId), transferAmount, "Bob should have received shares");
+        assertEq(
+            propertyToken.balanceOf(bob, propertyId),
+            transferAmount,
+            "Bob should have received shares"
+        );
     }
 
     function testPropertyTokenDirectOperations() public {
@@ -104,7 +126,11 @@ contract DeployPropertySystemTest is Test {
         proxy.createProperty(propertyId, 1000);
 
         // Test URI
-        assertEq(propertyToken.uri(propertyId), "https://api.example.com/token/2", "Token URI should be correct");
+        assertEq(
+            propertyToken.uri(propertyId),
+            "https://api.example.com/token/2",
+            "Token URI should be correct"
+        );
 
         // Test batch transfer
         uint256[] memory ids = new uint256[](2);
@@ -118,9 +144,15 @@ contract DeployPropertySystemTest is Test {
         propertyToken.safeBatchTransferFrom(alice, bob, ids, amounts, "");
 
         // Verify batch transfer results
-        assertEq(propertyToken.balanceOf(bob, propertyId), 300, "Bob should have received batch transfer");
         assertEq(
-            propertyToken.balanceOf(alice, propertyId), 700, "Alice should have remaining shares after batch transfer"
+            propertyToken.balanceOf(bob, propertyId),
+            300,
+            "Bob should have received batch transfer"
+        );
+        assertEq(
+            propertyToken.balanceOf(alice, propertyId),
+            700,
+            "Alice should have remaining shares after batch transfer"
         );
 
         // Test approval
@@ -132,27 +164,36 @@ contract DeployPropertySystemTest is Test {
         propertyToken.safeTransferFrom(bob, alice, propertyId, 100, "");
 
         // Verify approved transfer
-        assertEq(propertyToken.balanceOf(alice, propertyId), 800, "Alice should have received approved transfer");
         assertEq(
-            propertyToken.balanceOf(bob, propertyId), 200, "Bob should have remaining shares after approved transfer"
+            propertyToken.balanceOf(alice, propertyId),
+            800,
+            "Alice should have received approved transfer"
+        );
+        assertEq(
+            propertyToken.balanceOf(bob, propertyId),
+            200,
+            "Bob should have remaining shares after approved transfer"
         );
     }
 
     function testUpgradePropertyMethods() public {
-        // Test addresses
-        // proxy.upgradeToAndCall(address(new PropertyMethodsV2()), "");
-        // PropertyMethodsV2 newImplementation = new PropertyMethodsV2();
-        // ProxyAdmin proxyAdmin = ProxyAdmin(proxyAdminAddress);
-
         PropertyProxy propertyProxy = PropertyProxy(payable(proxyAddress));
         address proxyAdminAddress = propertyProxy.getAdmin();
         console.log("proxyAdminAddress:", proxyAdminAddress);
         console.log("this address:", address(this));
 
+        address implementationV2 = address(new PropertyMethodsV2());
         ProxyAdmin(proxyAdminAddress).upgradeAndCall(
             ITransparentUpgradeableProxy(payable(proxyAddress)),
-            address(new PropertyMethodsV2()),
-            abi.encodeWithSelector(PropertyMethodsV2.initialize.selector, "https://api.example.com/token/2")
+            implementationV2,
+            abi.encodeWithSelector(
+                PropertyMethodsV2.initialize.selector,
+                "https://api.example.com/token/2"
+            )
         );
+
+        address implementation = propertyProxy.getImplementation();
+
+        assertEq(implementation, implementationV2);
     }
 }
