@@ -8,8 +8,10 @@ import {PropertyToken} from "../contracts/PropertyToken.sol";
 import {PropertyMethodsV1} from "../contracts/PropertyMethodsV1.sol";
 import {PropertyMethodsV2} from "../contracts/PropertyMethodsV2.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {PropertyProxy} from "../contracts/PropertyProxy.sol";
 contract DeployPropertySystemTest is Test {
     DeployPropertySystem deployer;
     address owner;
@@ -19,11 +21,10 @@ contract DeployPropertySystemTest is Test {
 
     function setUp() public {
         owner = vm.addr(0x1234);
-        vm.prank(owner);
         deployer = new DeployPropertySystem();
 
         // Deploy the system
-        proxyAddress = deployer.run();
+        (proxyAddress) = deployer.run();
 
         // Get contract instances
         proxy = PropertyMethodsV1(proxyAddress);
@@ -178,15 +179,14 @@ contract DeployPropertySystemTest is Test {
         // Test addresses
         // proxy.upgradeToAndCall(address(new PropertyMethodsV2()), "");
         // PropertyMethodsV2 newImplementation = new PropertyMethodsV2();
-        ProxyAdmin proxyAdmin = new ProxyAdmin(owner);
+        // ProxyAdmin proxyAdmin = ProxyAdmin(proxyAdminAddress);
 
-        address adminAddress = proxyAdmin.owner();
-        vm.prank(adminAddress);
-        // who is the actual admin ?
-        console.log("Admin address:", adminAddress);
+        PropertyProxy propertyProxy = PropertyProxy(payable(proxyAddress));
+        address proxyAdminAddress = propertyProxy.getAdmin();
+        console.log("proxyAdminAddress:", proxyAdminAddress);
         console.log("this address:", address(this));
 
-        proxyAdmin.upgradeAndCall(
+        ProxyAdmin(proxyAdminAddress).upgradeAndCall(
             ITransparentUpgradeableProxy(payable(proxyAddress)),
             address(new PropertyMethodsV2()),
             abi.encodeWithSelector(
