@@ -29,13 +29,28 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
     }
 
     // Events
-    event PropertyCreated(uint256 indexed propertyId, address indexed owner, uint256 totalShares);
-    event PropertySharesPurchased(uint256 indexed propertyId, address indexed buyer, uint256 amount);
-    event PropertySharesSold(uint256 indexed propertyId, address indexed seller, uint256 amount);
+    event PropertyCreated(
+        uint256 indexed propertyId,
+        address indexed owner,
+        uint256 totalShares
+    );
+    event PropertySharesPurchased(
+        uint256 indexed propertyId,
+        address indexed buyer,
+        uint256 amount
+    );
+    event PropertySharesSold(
+        uint256 indexed propertyId,
+        address indexed seller,
+        uint256 amount
+    );
     event MinterAuthorized(address indexed minter);
     event MinterRevoked(address indexed minter);
     // New event
-    event PropertyDescriptionUpdated(uint256 indexed propertyId, string description);
+    event PropertyDescriptionUpdated(
+        uint256 indexed propertyId,
+        string description
+    );
 
     // Errors
     error InsufficientShares();
@@ -57,7 +72,10 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @param baseURI_ Base URI for token metadata
      * @param propertyToken_ Address of the PropertyToken contract
      */
-    function initialize(string memory baseURI_, address propertyToken_) public initializer {
+    function initialize(
+        string memory baseURI_,
+        address propertyToken_
+    ) public reinitializer(2) {
         __Ownable_init(msg.sender);
         _baseURI = baseURI_;
         propertyToken = PropertyToken(propertyToken_);
@@ -105,7 +123,8 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
     function sellShares(uint256 propertyId, uint256 amount) external {
         PropertyData storage property = propertyData[propertyId];
         if (property.totalShares == 0) revert PropertyNotFound();
-        if (property.shareholderShares[msg.sender] < amount) revert InsufficientShares();
+        if (property.shareholderShares[msg.sender] < amount)
+            revert InsufficientShares();
 
         property.availableShares += amount;
         property.shareholderShares[msg.sender] -= amount;
@@ -137,7 +156,10 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @param propertyId ID of the property
      * @param account Address to query
      */
-    function getShareholderShares(uint256 propertyId, address account) external view returns (uint256) {
+    function getShareholderShares(
+        uint256 propertyId,
+        address account
+    ) external view returns (uint256) {
         return propertyData[propertyId].shareholderShares[account];
     }
 
@@ -145,7 +167,9 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @notice Get the total number of shares for a property
      * @param propertyId ID of the property
      */
-    function getTotalShares(uint256 propertyId) external view returns (uint256) {
+    function getTotalShares(
+        uint256 propertyId
+    ) external view returns (uint256) {
         return propertyData[propertyId].totalShares;
     }
 
@@ -153,7 +177,9 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @notice Get the number of available shares for a property
      * @param propertyId ID of the property
      */
-    function getAvailableShares(uint256 propertyId) external view returns (uint256) {
+    function getAvailableShares(
+        uint256 propertyId
+    ) external view returns (uint256) {
         return propertyData[propertyId].availableShares;
     }
 
@@ -161,7 +187,9 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @notice Get the owner of a property
      * @param propertyId ID of the property
      */
-    function getPropertyOwner(uint256 propertyId) external view returns (address) {
+    function getPropertyOwner(
+        uint256 propertyId
+    ) external view returns (address) {
         return propertyData[propertyId].propertyOwner;
     }
 
@@ -169,7 +197,9 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @notice Get the properties owned by an address
      * @param account Address to query
      */
-    function getUserProperties(address account) external view returns (uint256[] memory) {
+    function getUserProperties(
+        address account
+    ) external view returns (uint256[] memory) {
         return userProperties[account];
     }
 
@@ -178,7 +208,10 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @param account Address to query
      * @param propertyId ID of the property
      */
-    function getUserInvestment(address account, uint256 propertyId) external view returns (uint256) {
+    function getUserInvestment(
+        address account,
+        uint256 propertyId
+    ) external view returns (uint256) {
         return userInvestments[account][propertyId];
     }
 
@@ -195,9 +228,14 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @param propertyId ID of the property
      * @param description Description to set
      */
-    function setPropertyDescription(uint256 propertyId, string memory description) external {
-        if (propertyData[propertyId].totalShares == 0) revert PropertyNotFound();
-        if (propertyData[propertyId].propertyOwner != msg.sender) revert UnauthorizedMinter();
+    function setPropertyDescription(
+        uint256 propertyId,
+        string memory description
+    ) external {
+        if (propertyData[propertyId].totalShares == 0)
+            revert PropertyNotFound();
+        if (propertyData[propertyId].propertyOwner != msg.sender)
+            revert UnauthorizedMinter();
 
         propertyDescriptions[propertyId] = description;
         emit PropertyDescriptionUpdated(propertyId, description);
@@ -207,7 +245,9 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @notice Get the description for a property
      * @param propertyId ID of the property
      */
-    function getPropertyDescription(uint256 propertyId) external view returns (string memory) {
+    function getPropertyDescription(
+        uint256 propertyId
+    ) external view returns (string memory) {
         return propertyDescriptions[propertyId];
     }
 }
