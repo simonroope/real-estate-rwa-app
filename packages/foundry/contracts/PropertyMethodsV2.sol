@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {PropertyToken} from "./PropertyToken.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { PropertyToken } from "./PropertyToken.sol";
 
 /**
  * @title PropertyMethodsV2
@@ -57,7 +57,7 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @param baseURI_ Base URI for token metadata
      * @param propertyToken_ Address of the PropertyToken contract
      */
-    function initialize(string memory baseURI_, address propertyToken_) public initializer {
+    function initialize(string memory baseURI_, address propertyToken_) public reinitializer(2) {
         __Ownable_init(msg.sender);
         _baseURI = baseURI_;
         propertyToken = PropertyToken(propertyToken_);
@@ -105,7 +105,9 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
     function sellShares(uint256 propertyId, uint256 amount) external {
         PropertyData storage property = propertyData[propertyId];
         if (property.totalShares == 0) revert PropertyNotFound();
-        if (property.shareholderShares[msg.sender] < amount) revert InsufficientShares();
+        if (property.shareholderShares[msg.sender] < amount) {
+            revert InsufficientShares();
+        }
 
         property.availableShares += amount;
         property.shareholderShares[msg.sender] -= amount;
@@ -196,8 +198,12 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @param description Description to set
      */
     function setPropertyDescription(uint256 propertyId, string memory description) external {
-        if (propertyData[propertyId].totalShares == 0) revert PropertyNotFound();
-        if (propertyData[propertyId].propertyOwner != msg.sender) revert UnauthorizedMinter();
+        if (propertyData[propertyId].totalShares == 0) {
+            revert PropertyNotFound();
+        }
+        if (propertyData[propertyId].propertyOwner != msg.sender) {
+            revert UnauthorizedMinter();
+        }
 
         propertyDescriptions[propertyId] = description;
         emit PropertyDescriptionUpdated(propertyId, description);
