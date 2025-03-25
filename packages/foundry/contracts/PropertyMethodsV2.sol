@@ -2,7 +2,7 @@
 pragma solidity ^0.8.22;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {PropertyToken} from "./PropertyToken.sol";
 
 /**
@@ -10,7 +10,7 @@ import {PropertyToken} from "./PropertyToken.sol";
  * @notice Implementation contract for property management functionality (Version 2)
  * @dev This contract contains the business logic for property management
  */
-contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
+contract PropertyMethodsV2 is Initializable, AccessControlUpgradeable {
     // Storage variables - MUST maintain same order as V1
     string internal _baseURI;
     mapping(uint256 => PropertyData) public propertyData;
@@ -19,6 +19,9 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
     mapping(address => bool) public authorizedMinters;
     // New storage variable - added at the end
     mapping(uint256 => string) public propertyDescriptions;
+
+    // Roles
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     // Structs - MUST maintain same order as V1
     struct PropertyData {
@@ -57,10 +60,14 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @param baseURI_ Base URI for token metadata
      * @param propertyToken_ Address of the PropertyToken contract
      */
-    function initialize(string memory baseURI_, address propertyToken_) public initializer {
-        __Ownable_init(msg.sender);
+    function initialize(string memory baseURI_, address propertyToken_) external initializer {
+        __AccessControl_init();
         _baseURI = baseURI_;
         propertyToken = PropertyToken(propertyToken_);
+
+        // Grant MINTER_ROLE to the deployer
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(MINTER_ROLE, msg.sender);
     }
 
     /**
@@ -118,7 +125,8 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @notice Authorize a minter
      * @param minter Address to authorize
      */
-    function authorizeMinter(address minter) external onlyOwner {
+    function authorizeMinter(address minter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _grantRole(MINTER_ROLE, minter);
         authorizedMinters[minter] = true;
         emit MinterAuthorized(minter);
     }
@@ -127,7 +135,8 @@ contract PropertyMethodsV2 is Initializable, OwnableUpgradeable {
      * @notice Revoke minter authorization
      * @param minter Address to revoke
      */
-    function revokeMinter(address minter) external onlyOwner {
+    function revokeMinter(address minter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _revokeRole(MINTER_ROLE, minter);
         authorizedMinters[minter] = false;
         emit MinterRevoked(minter);
     }

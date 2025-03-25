@@ -4,35 +4,60 @@ pragma solidity ^0.8.22;
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {DeployPropertySystem} from "../script/DeployPropertySystem.s.sol";
-import {PropertyToken} from "../contracts/PropertyToken.sol";
-import {PropertyMethodsV1} from "../contracts/PropertyMethodsV1.sol";
+import {PropertyToken} from "../src/PropertyToken.sol";
+import {PropertyMethodsV1} from "../src/PropertyMethodsV1.sol";
+import {PropertyProxy} from "../src/PropertyProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 contract DeployPropertySystemTest is Test {
     DeployPropertySystem deployer;
     address owner;
     address proxyAddress;
+    address proxyAdminAddress;
+    address propertyMethodsV1Address;
+    PropertyMethodsV1 propertyMethodsV1;
     PropertyToken propertyToken;
-    PropertyMethodsV1 proxy;
+    PropertyProxy propertyProxy;
+    ProxyAdmin proxyAdmin;
 
     function setUp() public {
-        owner = vm.addr(0x1234);
+        // Use the same private key as in the deployment script
+        uint256 deployerPrivateKey = 0x1234;
+        owner = vm.addr(deployerPrivateKey);
         deployer = new DeployPropertySystem();
 
         // Deploy the system
         proxyAddress = deployer.run();
 
         // Get contract instances
-        proxy = PropertyMethodsV1(proxyAddress);
-        propertyToken = PropertyToken(proxy.propertyToken());
+        propertyProxy = PropertyProxy(payable(proxyAddress));
+        proxyAdminAddress = propertyProxy.getAdmin();
+        propertyMethodsV1Address = propertyProxy.getImplementation();
+
+        console.log("\nSetup Debug Info:");
+        console.log("-------------------");
+        console.log("Proxy Address:", proxyAddress);
+        console.log("ProxyAdmin Address:", proxyAdminAddress);
+        console.log("Implementation Address:", propertyMethodsV1Address);
+        //console.log("Owner Address:", owner);
+
+        propertyMethodsV1 = PropertyMethodsV1(proxyAddress);
+        address tokenAddress = address(propertyMethodsV1.propertyToken());
+        console.log("Token Address from Implementation:", tokenAddress);
+
+        propertyToken = PropertyToken(tokenAddress);
+        console.log("PropertyToken instance created at:", address(propertyToken));
     }
 
     function testDeployPropertySystem() public view {
         // Verify proxy address is not zero
         assertTrue(proxyAddress != address(0), "Proxy address should not be zero");
 
+        // Verify ProxyAdmin was created
+        assertTrue(proxyAdminAddress != address(0), "ProxyAdmin address should not be zero");
+
         // Verify initialization
-        assertTrue(address(proxy.propertyToken()) != address(0), "PropertyToken should be set");
+        assertTrue(address(propertyMethodsV1.propertyToken()) != address(0), "PropertyToken should be set");
 
         // Verify PropertyToken base URI
         assertEq(
@@ -44,6 +69,7 @@ contract DeployPropertySystemTest is Test {
         console.log("-------------------");
         console.log("PropertyToken:", address(propertyToken));
         console.log("PropertyProxy:", proxyAddress);
+        console.log("ProxyAdmin:", proxyAdminAddress);
         console.log("Deployer:", owner);
     }
 
@@ -57,12 +83,12 @@ contract DeployPropertySystemTest is Test {
         uint256 totalShares = 1000;
 
         // Authorize minter in PropertyMethods
-        vm.prank(owner);
-        proxy.authorizeMinter(address(this));
+        // vm.prank(proxyAdminAddress);
+        // propertyMethodsV1.authorizeMinter(alice);
 
         // Create property through proxy
         vm.prank(alice);
-        proxy.createProperty(propertyId, totalShares);
+        propertyMethodsV1.createProperty(propertyId, totalShares);
 
         // Verify property creation
         assertEq(propertyToken.balanceOf(alice, propertyId), totalShares, "Owner should have all shares");
@@ -90,13 +116,9 @@ contract DeployPropertySystemTest is Test {
         // Test property ID
         uint256 propertyId = 2;
 
-        // Authorize minter in PropertyMethods
-        vm.prank(owner);
-        proxy.authorizeMinter(address(this));
-
         // Create property through proxy
         vm.prank(alice);
-        proxy.createProperty(propertyId, 1000);
+        propertyMethodsV1.createProperty(propertyId, 1000);
 
         // Test URI
         assertEq(propertyToken.uri(propertyId), "https://api.example.com/token/2", "Token URI should be correct");
